@@ -53,7 +53,10 @@ VSCODE_BIN="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code
 if command -v code >/dev/null 2>&1; then
   ok "code (PATH)"
 elif [ -x "$VSCODE_BIN" ]; then
-  note "code 가 PATH 에 없음 — 번들 바이너리로 fallback 동작. VS Code > Command Palette > 'Shell Command: Install code command in PATH' 권장"
+  note "code CLI가 PATH에 없음. Alt+Click이 한 번에 반응하지 않을 수 있음 (번들 바이너리 fallback은 동작하지만 불안정). 반드시 아래 중 하나로 해결 권장:"
+  note "  A) VS Code 실행 → Cmd+Shift+P → 'Shell Command: Install code command in PATH'"
+  note "  B) ln -sf \"$VSCODE_BIN\" /opt/homebrew/bin/code    # Apple Silicon"
+  note "     ln -sf \"$VSCODE_BIN\" /usr/local/bin/code       # Intel"
 else
   err "VS Code 미발견 (파일 링크 Alt+Click 기능 비활성화됨)"
 fi
