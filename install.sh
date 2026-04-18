@@ -29,7 +29,27 @@ else
   echo "  append 완료"
 fi
 
-# 3. Claude Code keybindings.json merge
+# 3. ~/.zshrc 에 Claude Code 환경변수 append
+say "~/.zshrc 환경변수 업데이트"
+ZSHRC="$HOME/.zshrc"
+touch "$ZSHRC"
+if grep -q "$MARKER_BEGIN" "$ZSHRC"; then
+  echo "  이미 설치됨 (마커 존재). 재설치하려면 해당 블록 수동 삭제 후 재실행"
+else
+  {
+    printf "\n%s\n" "$MARKER_BEGIN"
+    cat <<'ENV_EOF'
+# Claude Code: fullscreen rendering + 마우스 캡처 해제 (tmux 와 협업 개선)
+# docs: https://code.claude.com/docs/en/fullscreen
+export CLAUDE_CODE_NO_FLICKER=1
+export CLAUDE_CODE_DISABLE_MOUSE=1
+ENV_EOF
+    printf "%s\n" "$MARKER_END"
+  } >> "$ZSHRC"
+  echo "  append 완료"
+fi
+
+# 4. Claude Code keybindings.json merge
 say "~/.claude/keybindings.json 업데이트"
 mkdir -p "$HOME/.claude"
 KB="$HOME/.claude/keybindings.json"
@@ -46,7 +66,7 @@ else
   echo "  신규 생성 완료"
 fi
 
-# 4. tmux 설정 재로드 안내
+# 5. 완료 안내
 say "완료"
 cat <<'EOF'
 
@@ -56,15 +76,22 @@ cat <<'EOF'
      또는 다른 클라이언트에서:
        tmux kill-server && tmux
 
-  2. 검증:
-       tmux display-message -p '#{client_termfeatures}'
-     결과에 'extkeys', 'hyperlinks' 포함되어야 함.
+  2. 새 shell 시작해서 환경변수 반영 + Claude Code 재시작:
+       exec zsh
+       claude
 
-  3. Claude Code 재시작 후 테스트:
+  3. 검증:
+       tmux display-message -p '#{client_termfeatures}'
+       # 결과에 'extkeys', 'hyperlinks' 포함
+       env | grep CLAUDE_CODE_
+       # CLAUDE_CODE_NO_FLICKER=1, CLAUDE_CODE_DISABLE_MOUSE=1 확인
+
+  4. Claude Code 안에서 테스트:
      - Shift+Enter 로 줄바꿈
+     - 아무 단어에 더블클릭 → 하이라이트 + 클립보드 복사 (스크롤 안 함)
      - URL 에 Shift+Cmd+Click → 브라우저 열림
-     - 드래그 / 더블클릭으로 시스템 클립보드 복사
+     - 드래그로 텍스트 선택 → 손 떼면 자동 복사
 
 제거:
-  ~/.tmux.conf 에서 '>>> ghostty-tmux-claude-setup BEGIN' ~ 'END' 사이 블록 삭제.
+  ~/.tmux.conf 와 ~/.zshrc 에서 '>>> ghostty-tmux-claude-setup BEGIN' ~ 'END' 사이 블록 각각 삭제.
 EOF

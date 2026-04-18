@@ -16,7 +16,14 @@ section "OS"
 if [ "$(uname)" = "Darwin" ]; then
   ok "macOS detected"
 else
-  err "이 스크립트는 macOS 전용 (pbcopy / VS Code / Ghostty 경로 가정)"
+  err "이 스크립트는 macOS 전용 (pbcopy / Ghostty 경로 가정)"
+fi
+
+section "shell"
+if [ -n "${ZSH_VERSION:-}" ] || echo "${SHELL:-}" | grep -q zsh; then
+  ok "zsh"
+else
+  note "현재 shell 이 zsh 가 아닐 수 있음. install.sh 는 ~/.zshrc 에 환경변수 append"
 fi
 
 section "tmux"
@@ -48,8 +55,15 @@ else
   ok "/usr/bin/pbcopy"
 fi
 
+section "Claude Code env vars"
+if [ "${CLAUDE_CODE_NO_FLICKER:-}" = "1" ] && [ "${CLAUDE_CODE_DISABLE_MOUSE:-}" = "1" ]; then
+  ok "CLAUDE_CODE_NO_FLICKER / CLAUDE_CODE_DISABLE_MOUSE 설정됨"
+else
+  note "환경변수 미설정 — install.sh 가 ~/.zshrc 에 append. 설치 후 새 shell 필요"
+fi
+
 section "target files"
-for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json"; do
+for f in "$HOME/.tmux.conf" "$HOME/.zshrc" "$HOME/.claude/keybindings.json"; do
   if [ -e "$f" ]; then
     note "$f 이미 존재 — install.sh 는 append/merge 방식으로 처리"
   fi
