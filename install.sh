@@ -29,14 +29,7 @@ else
   echo "  append 완료"
 fi
 
-# 3. open-path.sh 설치
-say "~/.config/tmux/open-path.sh 설치"
-mkdir -p "$HOME/.config/tmux"
-cp "$REPO_DIR/open-path.sh" "$HOME/.config/tmux/open-path.sh"
-chmod +x "$HOME/.config/tmux/open-path.sh"
-echo "  복사 완료"
-
-# 4. Claude Code keybindings.json merge
+# 3. Claude Code keybindings.json merge
 say "~/.claude/keybindings.json 업데이트"
 mkdir -p "$HOME/.claude"
 KB="$HOME/.claude/keybindings.json"
@@ -53,7 +46,7 @@ else
   echo "  신규 생성 완료"
 fi
 
-# 5. tmux 설정 재로드 안내
+# 4. tmux 설정 재로드 안내
 say "완료"
 cat <<'EOF'
 
@@ -69,7 +62,7 @@ cat <<'EOF'
 
   3. Claude Code 재시작 후 테스트:
      - Shift+Enter 로 줄바꿈
-     - 파일 경로에 Alt+Click → VS Code 열림
+     - URL 에 Shift+Cmd+Click → 브라우저 열림
      - 드래그 / 더블클릭으로 시스템 클립보드 복사
 
 제거:

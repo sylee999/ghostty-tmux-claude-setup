@@ -48,21 +48,8 @@ else
   ok "/usr/bin/pbcopy"
 fi
 
-section "VS Code"
-VSCODE_BIN="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
-if command -v code >/dev/null 2>&1; then
-  ok "code (PATH)"
-elif [ -x "$VSCODE_BIN" ]; then
-  note "code CLI가 PATH에 없음. Alt+Click이 한 번에 반응하지 않을 수 있음 (번들 바이너리 fallback은 동작하지만 불안정). 반드시 아래 중 하나로 해결 권장:"
-  note "  A) VS Code 실행 → Cmd+Shift+P → 'Shell Command: Install code command in PATH'"
-  note "  B) ln -sf \"$VSCODE_BIN\" /opt/homebrew/bin/code    # Apple Silicon"
-  note "     ln -sf \"$VSCODE_BIN\" /usr/local/bin/code       # Intel"
-else
-  err "VS Code 미발견 (파일 링크 Alt+Click 기능 비활성화됨)"
-fi
-
 section "target files"
-for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json" "$HOME/.config/tmux/open-path.sh"; do
+for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json"; do
   if [ -e "$f" ]; then
     note "$f 이미 존재 — install.sh 는 append/merge 방식으로 처리"
   fi

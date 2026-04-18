@@ -8,7 +8,6 @@
 - macOS
 - tmux ≥ 3.4 (`brew install tmux` / `brew upgrade tmux`)
 - Ghostty 설치 + 기본 실행 환경
-- VS Code 설치 (Command Palette → "Shell Command: Install 'code' command in PATH" 권장, 미설정 시 번들 fallback 사용)
 - Claude Code 로그인 완료
 
 ## 1. 설치
@@ -51,19 +50,17 @@ tmux 안의 Claude Code 에서 아무 문자 입력 후 **Shift+Enter**.
 
 ---
 
-### 2.3 Alt+Click 파일 열기 (경로만)
+### 2.3 Shift+Cmd+Click 으로 URL 오픈
 
-Claude Code 에서 아무 파일 Read (예: `tmux-snippet.conf`). 출력된 파일 경로 텍스트에 **Alt+Click**.
+Claude Code 에서 아무 HTTP URL 이 포함된 출력 생성 (예: `echo "https://example.com"`). 해당 URL 위에 **Shift+Cmd+Click**.
 
-**기대**: VS Code 가 해당 파일을 엶.
+**기대**: 시스템 기본 브라우저가 URL 을 엶. (Shift 가 tmux 마우스 캡처를 우회해 Ghostty 까지 이벤트가 전달됨)
 
 ---
 
-### 2.4 Alt+Click 파일 열기 (경로 + 라인)
+### 2.4 (제거됨) Alt+Click 파일 열기
 
-Claude Code 출력 중 `path:숫자` 형태 (예: `tmux-snippet.conf:15`) 에 **Alt+Click**.
-
-**기대**: VS Code 가 해당 파일의 해당 라인으로 점프.
+이전 버전의 VS Code 연동 기능은 2026-04-18 제거되었습니다. Shift+Cmd+Click 으로 OSC 8 `file://` 링크 오픈은 시스템 기본 핸들러로 이동하며 VS Code 로 직접 열리지 않습니다.
 
 ---
 
