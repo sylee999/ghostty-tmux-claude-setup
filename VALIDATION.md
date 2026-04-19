@@ -6,10 +6,9 @@
 ## 전제 기기
 
 - macOS
-- zsh (install.sh 가 `~/.zshrc` 에 환경변수 append)
 - tmux ≥ 3.4 (`brew install tmux` / `brew upgrade tmux`)
 - Ghostty 설치 + 기본 실행 환경
-- Claude Code **v2.1.89 이상** (fullscreen rendering 지원)
+- Claude Code **v2.1.110 이상** (`/tui fullscreen` 슬래시 커맨드 지원)
 
 ## 1. 설치
 
@@ -18,15 +17,16 @@ cd ~/Works/Projects  # 또는 원하는 위치
 git clone https://github.com/sylee999/ghostty-tmux-claude-setup
 cd ghostty-tmux-claude-setup
 ./check-env.sh          # 전제 검증 — 실패 0건 필요, 경고는 허용
-./install.sh            # append/merge 설치 (tmux.conf + .zshrc + keybindings.json)
+./install.sh            # append/merge 설치 (tmux.conf + keybindings.json)
 ```
 
-설치 후 tmux + shell + Claude Code 모두 재시작:
+설치 후 tmux 재시작 + Claude Code 에서 fullscreen 영속 저장:
 
 ```bash
-tmux kill-server && tmux     # 또는: tmux detach && tmux attach
-exec zsh                      # 환경변수 반영
-# Claude Code 도 종료 후 새 세션으로 재시작
+tmux kill-server && tmux   # 또는: tmux detach && tmux attach
+
+claude                     # 새 Claude Code 세션
+/tui fullscreen            # ~/.claude/settings.json 에 "tui": "fullscreen" 기록
 ```
 
 ## 2. 검증 체크리스트
@@ -43,13 +43,13 @@ tmux display-message -p '#{client_termfeatures}'
 
 ---
 
-### 2.2 환경변수 반영
+### 2.2 Fullscreen 렌더러 영속 확인
 
 ```bash
-env | grep CLAUDE_CODE_
+python3 -c "import json; print(json.load(open('$HOME/.claude/settings.json')).get('tui'))"
 ```
 
-**기대**: `CLAUDE_CODE_NO_FLICKER=1`, `CLAUDE_CODE_DISABLE_MOUSE=1` 둘 다 출력.
+**기대**: 출력이 `fullscreen`. 다른 값이면 Claude Code 안에서 `/tui fullscreen` 재실행.
 
 ---
 
@@ -61,31 +61,31 @@ tmux 안의 Claude Code 에서 아무 문자 입력 후 **Shift+Enter**.
 
 ---
 
-### 2.4 더블클릭 단어 복사 (스크롤 없음)
+### 2.4 마우스 휠 스크롤
 
-Claude Code 출력에서 아무 단어 위에 **더블클릭**.
+Claude Code 안에서 긴 출력을 생성한 뒤 **마우스 휠** 로 위/아래 스크롤.
+
+**기대**: 출력 영역이 스크롤됨. 프롬프트 라인은 하단 고정(fullscreen 특성).
+
+이 항목 실패 = `~/.zshrc` 에 `CLAUDE_CODE_DISABLE_MOUSE=1` 가 남아 있을 가능성.
+제거 후 `exec zsh` → Claude Code 재시작.
+
+---
+
+### 2.5 더블클릭 단어 복사
+
+Claude Code 출력의 단어 위에서 **더블클릭**.
 
 **기대**:
 - 주황색 하이라이트로 단어 선택
 - 시스템 클립보드에 복사 (다른 앱에서 Cmd+V 로 확인)
-- 팬이 맨 아래로 스크롤하지 **않음**
 - 선택 유지 상태로 남음
-
-이 항목이 실패 = `CLAUDE_CODE_DISABLE_MOUSE=1` 가 적용 안 됐을 가능성. Claude Code 재시작 확인.
-
----
-
-### 2.5 Shift+Cmd+Click 으로 URL 오픈
-
-Claude Code 에서 아무 HTTP URL 생성 (예: `echo "https://example.com"`). URL 에 **Shift+Cmd+Click**.
-
-**기대**: 시스템 기본 브라우저가 URL 오픈 (Shift 가 tmux 마우스 캡처 우회).
 
 ---
 
 ### 2.6 드래그 선택 + 복사
 
-Claude Code 출력 영역에서 마우스 드래그 선택 후 손 떼기.
+Claude Code 출력 영역에서 마우스로 텍스트 드래그 선택 후 손 떼기.
 
 **기대**:
 - 주황색 하이라이트
@@ -98,11 +98,19 @@ Claude Code 출력 영역에서 마우스 드래그 선택 후 손 떼기.
 
 위 선택 유지 상태에서 **Esc**.
 
-**기대**: 선택 사라지고 즉시 Claude Code 프롬프트 영역으로 커서 복귀.
+**기대**: 선택 사라지고 즉시 Claude Code 프롬프트 영역으로 커서 복귀 (재클릭 불필요).
 
 ---
 
-### 2.8 (알려진 한계) `파일:라인` 링크 클릭
+### 2.8 Shift+Cmd+Click 으로 URL 오픈
+
+Claude Code 에서 아무 HTTP URL 생성 (예: `echo "https://example.com"`). URL 에 **Shift+Cmd+Click**.
+
+**기대**: 시스템 기본 브라우저가 URL 을 엶 (Shift 가 tmux 마우스 캡처 우회 → Ghostty 가 링크 해석).
+
+---
+
+### 2.9 (알려진 한계) `파일:라인` 링크 클릭
 
 Claude Code 출력에 `docs/foo.md:285` 같은 형태가 있을 때 Shift+Cmd+Click.
 

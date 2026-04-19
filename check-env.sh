@@ -19,13 +19,6 @@ else
   err "이 스크립트는 macOS 전용 (pbcopy / Ghostty 경로 가정)"
 fi
 
-section "shell"
-if [ -n "${ZSH_VERSION:-}" ] || echo "${SHELL:-}" | grep -q zsh; then
-  ok "zsh"
-else
-  note "현재 shell 이 zsh 가 아닐 수 있음. install.sh 는 ~/.zshrc 에 환경변수 append"
-fi
-
 section "tmux"
 if ! command -v tmux >/dev/null 2>&1; then
   err "tmux 미설치. 'brew install tmux' 실행"
@@ -55,15 +48,30 @@ else
   ok "/usr/bin/pbcopy"
 fi
 
-section "Claude Code env vars"
-if [ "${CLAUDE_CODE_NO_FLICKER:-}" = "1" ] && [ "${CLAUDE_CODE_DISABLE_MOUSE:-}" = "1" ]; then
-  ok "CLAUDE_CODE_NO_FLICKER / CLAUDE_CODE_DISABLE_MOUSE 설정됨"
+section "Claude Code"
+if ! command -v claude >/dev/null 2>&1; then
+  err "claude CLI 미발견 (PATH 에 없거나 미설치)"
 else
-  note "환경변수 미설정 — install.sh 가 ~/.zshrc 에 append. 설치 후 새 shell 필요"
+  cc_ver=$(claude --version 2>&1 | awk '{print $1}')
+  ok "claude $cc_ver"
+  # v2.1.110 이상 요구 (/tui 슬래시 커맨드 지원)
+  cc_major=$(echo "$cc_ver" | cut -d. -f1)
+  cc_minor=$(echo "$cc_ver" | cut -d. -f2)
+  cc_patch=$(echo "$cc_ver" | cut -d. -f3 | tr -d 'a-zA-Z-')
+  [ -z "$cc_patch" ] && cc_patch=0
+  if [ "$cc_major" -lt 2 ] || { [ "$cc_major" -eq 2 ] && [ "$cc_minor" -lt 1 ]; } || { [ "$cc_major" -eq 2 ] && [ "$cc_minor" -eq 1 ] && [ "$cc_patch" -lt 110 ]; }; then
+    err "Claude Code v2.1.110 이상 필요 (/tui 슬래시 커맨드). 현재 $cc_ver"
+  fi
+fi
+
+section "과거 env 잔재 (비권장)"
+if [ -f "$HOME/.zshrc" ] && grep -qE 'CLAUDE_CODE_DISABLE_MOUSE|CLAUDE_CODE_NO_FLICKER' "$HOME/.zshrc"; then
+  note "~/.zshrc 에 CLAUDE_CODE_DISABLE_MOUSE / NO_FLICKER 발견 — 제거 권장"
+  note "  DISABLE_MOUSE=1 은 휠 스크롤을 상실시킴. /tui fullscreen + tmux override 로 대체됨"
 fi
 
 section "target files"
-for f in "$HOME/.tmux.conf" "$HOME/.zshrc" "$HOME/.claude/keybindings.json"; do
+for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json"; do
   if [ -e "$f" ]; then
     note "$f 이미 존재 — install.sh 는 append/merge 방식으로 처리"
   fi

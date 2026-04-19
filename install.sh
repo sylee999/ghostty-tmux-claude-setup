@@ -29,24 +29,20 @@ else
   echo "  append 완료"
 fi
 
-# 3. ~/.zshrc 에 Claude Code 환경변수 append
-say "~/.zshrc 환경변수 업데이트"
+# 3. ~/.zshrc 의 과거 env 블록 정리 (있으면)
+# v2.1.89 권장이던 CLAUDE_CODE_NO_FLICKER / CLAUDE_CODE_DISABLE_MOUSE 는
+# v2.1.110+ `/tui fullscreen` + tmux override 방식으로 대체됨. DISABLE_MOUSE 는
+# Claude Code 내부 휠 스크롤을 상실시키므로 더 이상 권장하지 않는다.
+say "~/.zshrc 과거 env 블록 점검"
 ZSHRC="$HOME/.zshrc"
-touch "$ZSHRC"
-if grep -q "$MARKER_BEGIN" "$ZSHRC"; then
-  echo "  이미 설치됨 (마커 존재). 재설치하려면 해당 블록 수동 삭제 후 재실행"
+if [ -f "$ZSHRC" ] && grep -q "CLAUDE_CODE_DISABLE_MOUSE\|CLAUDE_CODE_NO_FLICKER" "$ZSHRC"; then
+  note_lines=$(grep -nE 'CLAUDE_CODE_DISABLE_MOUSE|CLAUDE_CODE_NO_FLICKER' "$ZSHRC" || true)
+  echo "  [!] ~/.zshrc 에 과거 env 가 남아 있음:"
+  printf '%s\n' "$note_lines" | sed 's/^/      /'
+  echo "  제거 권장: 해당 라인을 주석 처리하거나 삭제 후 'exec zsh'."
+  echo "  (자동 제거하지 않음 — 다른 설정과 섞여 있을 수 있어 사용자가 직접 처리)"
 else
-  {
-    printf "\n%s\n" "$MARKER_BEGIN"
-    cat <<'ENV_EOF'
-# Claude Code: fullscreen rendering + 마우스 캡처 해제 (tmux 와 협업 개선)
-# docs: https://code.claude.com/docs/en/fullscreen
-export CLAUDE_CODE_NO_FLICKER=1
-export CLAUDE_CODE_DISABLE_MOUSE=1
-ENV_EOF
-    printf "%s\n" "$MARKER_END"
-  } >> "$ZSHRC"
-  echo "  append 완료"
+  echo "  과거 env 없음 — OK"
 fi
 
 # 4. Claude Code keybindings.json merge
@@ -76,22 +72,24 @@ cat <<'EOF'
      또는 다른 클라이언트에서:
        tmux kill-server && tmux
 
-  2. 새 shell 시작해서 환경변수 반영 + Claude Code 재시작:
-       exec zsh
+  2. Claude Code 재시작 후 한 번만 실행해 fullscreen 렌더러 영속 저장:
        claude
+       /tui fullscreen
+     → ~/.claude/settings.json 에 "tui": "fullscreen" 으로 기록됨.
+       (환경변수 방식 CLAUDE_CODE_NO_FLICKER 는 v2.1.110+ 에서 불필요)
 
   3. 검증:
        tmux display-message -p '#{client_termfeatures}'
        # 결과에 'extkeys', 'hyperlinks' 포함
-       env | grep CLAUDE_CODE_
-       # CLAUDE_CODE_NO_FLICKER=1, CLAUDE_CODE_DISABLE_MOUSE=1 확인
 
   4. Claude Code 안에서 테스트:
      - Shift+Enter 로 줄바꿈
-     - 아무 단어에 더블클릭 → 하이라이트 + 클립보드 복사 (스크롤 안 함)
-     - URL 에 Shift+Cmd+Click → 브라우저 열림
+     - 마우스 휠 스크롤로 출력 탐색
+     - 아무 단어에 더블클릭 → 하이라이트 + 클립보드 복사
      - 드래그로 텍스트 선택 → 손 떼면 자동 복사
+     - URL 에 Shift+Cmd+Click → 브라우저 열림
 
 제거:
-  ~/.tmux.conf 와 ~/.zshrc 에서 '>>> ghostty-tmux-claude-setup BEGIN' ~ 'END' 사이 블록 각각 삭제.
+  ~/.tmux.conf 에서 '>>> ghostty-tmux-claude-setup BEGIN' ~ 'END' 사이 블록 삭제.
+  (이제 ~/.zshrc 는 건드리지 않는다)
 EOF
