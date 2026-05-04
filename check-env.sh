@@ -64,6 +64,14 @@ else
   fi
 fi
 
+section "Codex CLI (optional)"
+if ! command -v codex >/dev/null 2>&1; then
+  note "codex CLI 미발견 — Codex optional keymap 설치는 건너뜀"
+else
+  codex_ver=$(codex --version 2>&1 | tail -n 1)
+  ok "$codex_ver"
+fi
+
 section "과거 env 잔재 (비권장)"
 if [ -f "$HOME/.zshrc" ] && grep -qE 'CLAUDE_CODE_DISABLE_MOUSE|CLAUDE_CODE_NO_FLICKER' "$HOME/.zshrc"; then
   note "~/.zshrc 에 CLAUDE_CODE_DISABLE_MOUSE / NO_FLICKER 발견 — 제거 권장"
@@ -71,7 +79,7 @@ if [ -f "$HOME/.zshrc" ] && grep -qE 'CLAUDE_CODE_DISABLE_MOUSE|CLAUDE_CODE_NO_F
 fi
 
 section "target files"
-for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json"; do
+for f in "$HOME/.tmux.conf" "$HOME/.claude/keybindings.json" "$HOME/.codex/config.toml"; do
   if [ -e "$f" ]; then
     note "$f 이미 존재 — install.sh 는 append/merge 방식으로 처리"
   fi

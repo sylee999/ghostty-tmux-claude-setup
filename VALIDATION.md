@@ -9,6 +9,7 @@
 - tmux ≥ 3.4 (`brew install tmux` / `brew upgrade tmux`)
 - Ghostty 설치 + 기본 실행 환경
 - Claude Code **v2.1.110 이상** (`/tui fullscreen` 슬래시 커맨드 지원)
+- Codex CLI 는 optional. 설치된 경우 `~/.codex/config.toml` keymap 도 검증.
 
 ## 1. 설치
 
@@ -17,7 +18,7 @@ cd ~/Works/Projects  # 또는 원하는 위치
 git clone https://github.com/sylee999/ghostty-tmux-claude-setup
 cd ghostty-tmux-claude-setup
 ./check-env.sh          # 전제 검증 — 실패 0건 필요, 경고는 허용
-./install.sh            # append/merge 설치 (tmux.conf + keybindings.json)
+./install.sh            # append/merge 설치 (tmux.conf + keybindings.json + optional codex config)
 ```
 
 설치 후 tmux 재시작 + Claude Code 에서 fullscreen 영속 저장:
@@ -122,6 +123,34 @@ Claude Code 출력에 `docs/foo.md:285` 같은 형태가 있을 때 Shift+Cmd+Cl
 
 ---
 
+### 2.10 Codex CLI optional keymap
+
+Codex CLI 가 설치된 기기에서만 수행.
+
+```bash
+command -v codex
+grep -n "ghostty-tmux-claude-setup codex" "$HOME/.codex/config.toml"
+```
+
+**기대**: `codex` 경로가 출력되고, `~/.codex/config.toml` 에 Codex marker 가 있음.
+
+tmux 안에서 Codex 실행:
+
+```bash
+codex
+```
+
+Codex 입력창에서 `첫 줄` 입력 후 **Shift+Enter**, 이어서 `둘째 줄` 입력.
+
+**기대**: 프롬프트가 전송되지 않고 두 줄 입력 상태가 됨.
+
+Fallback 확인: 새 입력에서 **Ctrl+J** 도 줄바꿈으로 동작.
+
+주의: 이 항목은 `~/.codex/config.toml` 만 검증한다. Codex 때문에 Ghostty,
+`~/.tmux.conf`, `~/.claude/*` 를 추가 변경하지 않는다.
+
+---
+
 ## 3. 실패 리포트
 
 한 항목이라도 실패하면:
@@ -158,6 +187,7 @@ Date:
 Host:
 tmux version:
 Claude Code version:
+Codex CLI version:
 All checks passed: Y/N
 Notes:
 ```

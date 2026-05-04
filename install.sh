@@ -7,6 +7,8 @@ set -eu
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 MARKER_BEGIN="# >>> ghostty-tmux-claude-setup BEGIN"
 MARKER_END="# <<< ghostty-tmux-claude-setup END"
+CODEX_MARKER_BEGIN="# >>> ghostty-tmux-claude-setup codex BEGIN"
+CODEX_MARKER_END="# <<< ghostty-tmux-claude-setup codex END"
 
 say() { printf "==> %s\n" "$1"; }
 
@@ -62,7 +64,33 @@ else
   echo "  신규 생성 완료"
 fi
 
-# 5. 완료 안내
+# 5. Codex CLI keymap append (optional, Codex-only)
+say "~/.codex/config.toml 업데이트 (Codex optional)"
+if command -v codex >/dev/null 2>&1; then
+  CODEX_DIR="$HOME/.codex"
+  CODEX_CONFIG="$CODEX_DIR/config.toml"
+  mkdir -p "$CODEX_DIR"
+  touch "$CODEX_CONFIG"
+
+  if grep -qF "$CODEX_MARKER_BEGIN" "$CODEX_CONFIG"; then
+    echo "  이미 설치됨 (Codex 마커 존재). 변경 없음"
+  elif grep -q '^\[tui\.keymap\.editor\]' "$CODEX_CONFIG"; then
+    echo "  기존 [tui.keymap.editor] 테이블 있음 — 수동 머지 필요. 아래 설정을 병합:"
+    sed 's/^/    /' "$REPO_DIR/codex-snippet.toml"
+    echo "  참고: $REPO_DIR/codex-snippet.toml"
+  else
+    {
+      printf "\n%s\n" "$CODEX_MARKER_BEGIN"
+      cat "$REPO_DIR/codex-snippet.toml"
+      printf "%s\n" "$CODEX_MARKER_END"
+    } >> "$CODEX_CONFIG"
+    echo "  append 완료"
+  fi
+else
+  echo "  codex CLI 미발견 — Codex optional 설정 건너뜀"
+fi
+
+# 6. 완료 안내
 say "완료"
 cat <<'EOF'
 
@@ -89,7 +117,13 @@ cat <<'EOF'
      - 드래그로 텍스트 선택 → 손 떼면 자동 복사
      - URL 에 Shift+Cmd+Click → 브라우저 열림
 
+  5. Codex CLI 를 쓰는 경우:
+       codex
+     → Shift+Enter 로 줄바꿈, Ctrl+J 로 fallback 줄바꿈 확인.
+       Codex 설정은 ~/.codex/config.toml 에만 추가되며 Claude Code 설정은 건드리지 않음.
+
 제거:
   ~/.tmux.conf 에서 '>>> ghostty-tmux-claude-setup BEGIN' ~ 'END' 사이 블록 삭제.
+  ~/.codex/config.toml 에서 '>>> ghostty-tmux-claude-setup codex BEGIN' ~ 'END' 사이 블록 삭제.
   (이제 ~/.zshrc 는 건드리지 않는다)
 EOF

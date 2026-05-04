@@ -1,0 +1,7 @@
+# ==============================================================================
+# Codex CLI optional keymap
+# Appended to ~/.codex/config.toml by install.sh when Codex is installed.
+# ==============================================================================
+
+[tui.keymap.editor]
+insert_newline = ["shift-enter", "ctrl-j"]
