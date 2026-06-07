@@ -38,9 +38,12 @@ claude                     # 새 Claude Code 세션
 
 ```bash
 tmux display-message -p '#{client_termfeatures}'
+tmux show -s extended-keys-format
 ```
 
-**기대**: 결과에 `extkeys`, `hyperlinks` **둘 다 포함**.
+**기대**:
+- `client_termfeatures` 결과에 `extkeys`, `hyperlinks` **둘 다 포함**
+- `extended-keys-format csi-u`
 
 ---
 
@@ -146,8 +149,15 @@ Codex 입력창에서 `첫 줄` 입력 후 **Shift+Enter**, 이어서 `둘째 �
 
 Fallback 확인: 새 입력에서 **Ctrl+J** 도 줄바꿈으로 동작.
 
-주의: 이 항목은 `~/.codex/config.toml` 만 검증한다. Codex 때문에 Ghostty,
-`~/.tmux.conf`, `~/.claude/*` 를 추가 변경하지 않는다.
+Codex 출력 영역의 단어 위에서 **더블클릭**.
+
+**기대**:
+- 주황색 하이라이트로 단어 선택
+- 시스템 클립보드에 복사 (다른 앱에서 Cmd+V 로 확인)
+- 선택 유지 상태로 남음
+
+주의: Codex keymap 자체는 `~/.codex/config.toml` 에 들어간다. Shift+Enter 가
+tmux 안에서 동작하려면 공통 tmux 설정의 `extended-keys-format csi-u` 도 필요하다.
 
 ---
 

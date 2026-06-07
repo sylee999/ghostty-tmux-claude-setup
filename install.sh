@@ -12,6 +12,36 @@ CODEX_MARKER_END="# <<< ghostty-tmux-claude-setup codex END"
 
 say() { printf "==> %s\n" "$1"; }
 
+replace_marked_block() {
+  file="$1"
+  begin="$2"
+  end="$3"
+  snippet="$4"
+  tmp="${file}.tmp.$$"
+
+  awk -v begin="$begin" -v end="$end" -v snippet="$snippet" '
+    BEGIN {
+      while ((getline line < snippet) > 0) {
+        replacement = replacement line ORS
+      }
+      close(snippet)
+    }
+    $0 == begin {
+      print
+      printf "%s", replacement
+      skip = 1
+      next
+    }
+    $0 == end {
+      skip = 0
+      print
+      next
+    }
+    !skip { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
 # 1. check-env.sh 실행
 say "환경 검증"
 bash "$REPO_DIR/check-env.sh" || { echo "환경 검증 실패 — 중단"; exit 1; }
@@ -21,7 +51,14 @@ say "~/.tmux.conf 업데이트"
 TMUX_CONF="$HOME/.tmux.conf"
 touch "$TMUX_CONF"
 if grep -q "$MARKER_BEGIN" "$TMUX_CONF"; then
-  echo "  이미 설치됨 (마커 존재). 재설치하려면 해당 블록 수동 삭제 후 재실행"
+  if grep -q "$MARKER_END" "$TMUX_CONF"; then
+    replace_marked_block "$TMUX_CONF" "$MARKER_BEGIN" "$MARKER_END" "$REPO_DIR/tmux-snippet.conf"
+    echo "  기존 managed block 최신 내용으로 갱신 완료"
+  else
+    echo "  [!] 시작 마커는 있으나 종료 마커가 없음 — 자동 갱신 중단"
+    echo "      $MARKER_BEGIN ~ $MARKER_END 블록을 정리한 뒤 재실행"
+    exit 1
+  fi
 else
   {
     printf "\n%s\n" "$MARKER_BEGIN"
@@ -74,6 +111,7 @@ if command -v codex >/dev/null 2>&1; then
 
   if grep -qF "$CODEX_MARKER_BEGIN" "$CODEX_CONFIG"; then
     echo "  이미 설치됨 (Codex 마커 존재). 변경 없음"
+    echo "  참고: Codex config 는 다른 도구가 같은 파일에 쓰므로 marker block 자동 교체 안 함"
   elif grep -q '^\[tui\.keymap\.editor\]' "$CODEX_CONFIG"; then
     echo "  기존 [tui.keymap.editor] 테이블 있음 — 수동 머지 필요. 아래 설정을 병합:"
     sed 's/^/    /' "$REPO_DIR/codex-snippet.toml"
@@ -109,6 +147,8 @@ cat <<'EOF'
   3. 검증:
        tmux display-message -p '#{client_termfeatures}'
        # 결과에 'extkeys', 'hyperlinks' 포함
+       tmux show -s extended-keys-format
+       # 결과가 'extended-keys-format csi-u'
 
   4. Claude Code 안에서 테스트:
      - Shift+Enter 로 줄바꿈
@@ -120,6 +160,7 @@ cat <<'EOF'
   5. Codex CLI 를 쓰는 경우:
        codex
      → Shift+Enter 로 줄바꿈, Ctrl+J 로 fallback 줄바꿈 확인.
+       출력 단어 더블클릭 → 하이라이트 + 클립보드 복사 확인.
        Codex 설정은 ~/.codex/config.toml 에만 추가되며 Claude Code 설정은 건드리지 않음.
 
 제거:

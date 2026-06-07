@@ -31,6 +31,14 @@ else
   if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -lt 4 ]; }; then
     err "tmux 3.4 이상 필요 (현재 $ver). 'brew upgrade tmux'"
   fi
+  if [ -n "${TMUX:-}" ]; then
+    key_format=$(tmux show -s -qv extended-keys-format 2>/dev/null || true)
+    if [ "$key_format" = "csi-u" ]; then
+      ok "tmux extended-keys-format csi-u"
+    else
+      note "tmux extended-keys-format=${key_format:-unset} — install 후 csi-u 여야 Codex Shift+Enter 가 안정적으로 동작"
+    fi
+  fi
 fi
 
 section "Ghostty"

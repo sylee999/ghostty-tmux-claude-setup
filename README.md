@@ -10,8 +10,8 @@ Codex CLI 사용자를 위한 optional keymap 설정도 함께 제공한다.
 증상·원인·해결을 재현 가능한 스크립트 형태로 묶은 것이다.
 
 **한계**: Claude Code / tmux / Ghostty 업데이트로 동작이 바뀔 수 있다.
-최종 검증: 2026-05-04 (tmux 3.6a, Ghostty 1.3.1, Claude Code 2.1.114,
-Codex CLI 0.128.0).
+최종 검증: 2026-06-07 (tmux 3.6a, Ghostty 1.3.1, Claude Code 2.1.168,
+Codex CLI 0.137.0).
 
 ## 핵심 결정: `/tui fullscreen` + tmux override
 
@@ -35,21 +35,21 @@ Codex CLI 0.128.0).
 - ✅ 더블클릭 단어 복사 / 트리플클릭 라인 복사 / 드래그 복사 (tmux override)
 - ✅ TUI 깜빡임 제거, 긴 대화 메모리 평평 (`/tui fullscreen`)
 - ✅ URL 오픈 — **Shift+Cmd+Click** (Shift 가 tmux 캡처 우회 → Ghostty 로 전달)
-- ✅ Shift+Enter 줄바꿈 (extended keys)
+- ✅ Shift+Enter 줄바꿈 (Ghostty CSI-u + tmux `extended-keys-format csi-u`)
 
 ## 해결하는 문제
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| Shift+Enter 가 줄바꿈이 아닌 전송 | tmux 가 extended keys 전달 안 함 | `extended-keys on` + `extkeys` terminal-feature |
+| Shift+Enter 가 줄바꿈이 아닌 전송 | tmux 가 extended keys 를 전달하지 않거나 xterm format 으로 재인코딩 | `extended-keys on` + `extended-keys-format csi-u` + `extkeys` terminal-feature |
 | URL 링크 클릭 무반응 | `mouse on` 상태에서 tmux 가 마우스 이벤트를 가로챔 | **Shift+Cmd+Click** (Shift 가 tmux 캡처 우회 → Ghostty 가 링크 오픈) |
 | TUI 앱(yazi · vim · htop · lazygit 등) 안에서 텍스트 드래그 선택 실패 | 내부 TUI 가 마우스 캡처 + 일부 앱은 redraw 로 선택 무효화 | **Shift+드래그** (Shift 가 tmux/TUI 캡처 우회 → Ghostty 네이티브 선택), 이후 **Cmd+C** |
-| Claude Code 안에서 더블클릭/드래그 복사 실패 | Claude Code 가 마우스 캡처 중이라 tmux 기본 바인딩의 `mouse_any_flag` 분기로 copy-mode 진입 실패 | `pane_in_mode` 만 체크하도록 MouseDrag / Double / Triple 바인딩 override |
+| Claude Code / Codex 안에서 더블클릭/드래그 복사 실패 | TUI 앱이 마우스 캡처 중이라 tmux 기본 바인딩의 `mouse_any_flag` 분기로 copy-mode 진입 실패 | `pane_in_mode` 만 체크하도록 MouseDrag / Double / Triple 바인딩 override |
 | 더블클릭 후 선택이 즉시 사라짐 + 클립보드에도 안 들어감 | 기본값이 `copy-pipe-and-cancel` + pbcopy 미연동 | `copy-pipe-no-clear "/usr/bin/pbcopy"` 로 교체 |
 | Esc 누르면 copy-mode 에서 안 나감 | vi-mode 기본 Esc = `clear-selection` | Esc → `cancel` 로 override |
 | 알림 / 프로그레스바가 Ghostty 까지 안 옴 | tmux 가 OSC 이스케이프 차단 | `allow-passthrough on` |
 | TUI 깜빡임 / 긴 대화에서 메모리 증가 | 인라인 리드로우 렌더링 | `/tui fullscreen` (v2.1.110+) — settings.json `"tui": "fullscreen"` 으로 영속 |
-| Codex CLI 에서 Shift+Enter 줄바꿈 미동작 | Codex 기본 keymap 이 Shift+Enter 를 newline 으로 쓰지 않음 | optional `~/.codex/config.toml` keymap append |
+| Codex CLI 에서 Shift+Enter 줄바꿈 미동작 | Codex keymap 부재 또는 tmux 가 Ghostty CSI-u 입력을 xterm format 으로 변환 | optional `~/.codex/config.toml` keymap append + tmux `extended-keys-format csi-u` |
 
 ## 해결하지 못한 것 (솔직하게)
 
@@ -102,6 +102,8 @@ cd ghostty-tmux-claude-setup
 tmux kill-server && tmux       # 또는: tmux detach && tmux attach
 tmux display-message -p '#{client_termfeatures}'
 # 결과에 extkeys, hyperlinks 포함 확인
+tmux show -s extended-keys-format
+# 결과가 csi-u 인지 확인
 
 claude
 # 세션 안에서 한 번만 실행 (settings.json 에 영속 저장):
@@ -114,8 +116,9 @@ Shift+Cmd+Click URL 오픈.
 ### Codex CLI optional setup
 
 `install.sh` 는 `codex` CLI 가 PATH 에 있으면 `~/.codex/config.toml` 에 다음 설정을
-marker 기반으로 append 한다. `~/.tmux.conf`, Ghostty 설정, `~/.claude/*` 는 Codex
-때문에 추가 변경하지 않는다.
+marker 기반으로 append/update 한다. Codex optional block 은 Ghostty 설정이나
+`~/.claude/*` 를 변경하지 않는다. Shift+Enter 가 tmux 안에서도 동작하려면 공통
+tmux snippet 의 `extended-keys-format csi-u` 도 적용되어 있어야 한다.
 
 ```toml
 [tui.keymap.editor]
@@ -127,6 +130,7 @@ insert_newline = ["shift-enter", "ctrl-j"]
 - `Shift+Enter` 를 Codex editor newline 으로 사용
 - `Ctrl+J` 는 기존 fallback 으로 유지
 - Claude Code 와 공유되는 Ghostty/tmux 전역 설정에는 부작용을 만들지 않음
+- Codex 0.137.0 기준 `insert_newline` 은 `[tui.keymap.editor]` 아래의 유효한 action
 
 이미 `~/.codex/config.toml` 에 `[tui.keymap.editor]` 테이블이 있으면 자동 병합하지
 않고 수동 머지 안내만 출력한다.
